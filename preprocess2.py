@@ -146,3 +146,13 @@ def is_binary(df_, nums):
 
 
 
+def check_dates(date, format):
+  try:
+     pd.to_datetime(date, format=format)
+     return True
+  except:
+    return False
+
+def tab_check_dates(df, dates , format ='%d/%m/%Y'):
+  # there is a bug with NA but still works!
+  return (df[dates].map(lambda x: check_dates(x, format=format)).sum()/df.shape[0]).to_frame('n. correct format')
