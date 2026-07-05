@@ -137,3 +137,12 @@ def is_binary(df_, nums):
             variables.append(var)
     return variables
 
+
+
+
+
+
+
+
+
+
