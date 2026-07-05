@@ -103,6 +103,20 @@ def classify_vars(df):
     return categorial, nonormal, normal
 
 
+
+
+def normal_noNormal(df, numeric):
+    df = df[numeric].copy()
+    nonormal, normal = [],[]
+    for t in df.columns:
+            p = stats.shapiro(df[t])
+            if p<0.05:
+                nonormal.append(t)
+            else: 
+                normal.append(t)
+    return normal, nonormal
+
+
 #### Adding more functions...
 
 
