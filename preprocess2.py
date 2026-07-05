@@ -1,184 +1,500 @@
-# Preprocessing Module
+# ============================================================
+# Models with GridSearchCV compatible with sklearn Pipeline
+# ============================================================
 
-from sklearn.base import BaseEstimator, TransformerMixin
-import pandas as pd
 import numpy as np
 
+from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.utils.validation import check_is_fitted
 
-def reduce_categories(X, min_percent):
-    # if the relative share is lesser than min_percent put the label 'Another'
-    X_transformed = X.copy()
-    for var in X_transformed.columns:
-        cats = X_transformed[var].value_counts(normalize=True).to_dict()
-        to_replace = [key for key in cats if cats[key]<min_percent and key!='nan']  
-         # Convert categories that not appear at least minpercent to <Another>
-        X_transformed[var] = X_transformed[var].replace(to_replace=to_replace, value='Another')
-    return X_transformed
-      
-class reduceCategories(BaseEstimator, TransformerMixin):
-    def __init__(self, min_percent=0.05):
-        self.min_percent = min_percent
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
 
-    def fit(self, X, y=None):
+from sklearn.model_selection import RepeatedStratifiedKFold, GridSearchCV
+
+from sklearn.metrics import (
+    make_scorer,
+    confusion_matrix,
+    f1_score,
+    accuracy_score,
+    recall_score
+)
+
+
+def help():
+    print("Models with grid search and stratified K-folds...")
+
+
+# ============================================================
+# Support Vector Machine
+# ============================================================
+
+def grid_SVC(
+    X_train,
+    y_train,
+    performance_metric="f1",
+    resultsGrid=False,
+    return_grid=False
+):
+    model = SVC(probability=True)
+
+    C = np.linspace(0.000001, 1000, 5)
+    kernels = ["poly", "rbf"]
+    gamma = ["scale"]
+
+    grid = {
+        "C": C,
+        "kernel": kernels,
+        "gamma": gamma
+    }
+
+    cv = RepeatedStratifiedKFold(
+        n_splits=5,
+        n_repeats=1,
+        random_state=1
+    )
+
+    grid_search = GridSearchCV(
+        estimator=model,
+        param_grid=grid,
+        n_jobs=-1,
+        cv=cv,
+        scoring=performance_metric,
+        error_score="raise"
+    )
+
+    grid_result = grid_search.fit(X_train, y_train)
+
+    if resultsGrid:
+        return grid_result.cv_results_
+
+    if return_grid:
+        return grid_result
+
+    return grid_result.best_estimator_
+
+
+class GridSearchSVC(BaseEstimator, ClassifierMixin):
+    def __init__(self, performance_metric="f1"):
+        self.performance_metric = performance_metric
+
+    def fit(self, X, y):
+        self.grid_ = grid_SVC(
+            X,
+            y,
+            performance_metric=self.performance_metric,
+            return_grid=True
+        )
+        self.model_ = self.grid_.best_estimator_
+        self.classes_ = self.model_.classes_
         return self
 
-    def transform(self, X, y=None):
-        X_transformed = X.copy()
-        return reduce_categories(pd.DataFrame(X_transformed), self.min_percent)
+    def hypers(self):
+        check_is_fitted(self, "grid_")
+        return self.grid_.best_params_
 
- 
+    def predict(self, X):
+        check_is_fitted(self, "model_")
+        return self.model_.predict(X)
 
-# To use reduce_categories in a pipeline!!
-
-
-
-
-# Drop columns with NaN's
-def drop_colNaN(df_, min_percent):
-    # If the column have lesser of threshold complete data 
-    # will be drop of the dataset...
-    # threshold = 1,indicates that keep only variables without nans...
-    df = df_.copy()
-    N  = df.shape[0] 
-    keep = [var for var in df.columns if df[var].notnull().sum()/N >= min_percent]
-    return df[keep].to_numpy()
+    def predict_proba(self, X):
+        check_is_fitted(self, "model_")
+        return self.model_.predict_proba(X)
 
 
-# Drop columns to uses in a PipeLine!!!
-class drop_ColumnsNan(BaseEstimator, TransformerMixin):
-    def __init__(self, min_percent=0.8):
-        self.min_percent = min_percent
+# ============================================================
+# K-Nearest Neighbors
+# ============================================================
 
-    def fit(self, X, y=None):
+def grid_KNN(
+    X_train,
+    y_train,
+    performance_metric="f1",
+    resultsGrid=False,
+    return_grid=False
+):
+    model = KNeighborsClassifier()
+
+    n_neighbors = np.arange(1, 10, 1)
+    weights = ["uniform", "distance"]
+
+    grid = {
+        "n_neighbors": n_neighbors,
+        "weights": weights
+    }
+
+    cv = RepeatedStratifiedKFold(
+        n_splits=5,
+        n_repeats=1,
+        random_state=1
+    )
+
+    grid_search = GridSearchCV(
+        estimator=model,
+        param_grid=grid,
+        n_jobs=-1,
+        cv=cv,
+        scoring=performance_metric,
+        error_score="raise"
+    )
+
+    grid_result = grid_search.fit(X_train, y_train)
+
+    if resultsGrid:
+        return grid_result.cv_results_
+
+    if return_grid:
+        return grid_result
+
+    return grid_result.best_estimator_
+
+
+class GridSearchKNN(BaseEstimator, ClassifierMixin):
+    def __init__(self, performance_metric="f1"):
+        self.performance_metric = performance_metric
+
+    def fit(self, X, y):
+        self.grid_ = grid_KNN(
+            X,
+            y,
+            performance_metric=self.performance_metric,
+            return_grid=True
+        )
+        self.model_ = self.grid_.best_estimator_
+        self.classes_ = self.model_.classes_
         return self
 
-    def transform(self, X, y=None):
-        X_transformed = X.copy()
-        return drop_colNaN(pd.DataFrame(X_transformed), self.min_percent)
+    def hypers(self):
+        check_is_fitted(self, "grid_")
+        return self.grid_.best_params_
+
+    def predict(self, X):
+        check_is_fitted(self, "model_")
+        return self.model_.predict(X)
+
+    def predict_proba(self, X):
+        check_is_fitted(self, "model_")
+        return self.model_.predict_proba(X)
 
 
+# ============================================================
+# Logistic Regression
+# ============================================================
 
-def val_to_str(val):
-    if val==np.nan:
-        pass
-    else:
-        val  = str(val)
-    return val
+def grid_lr(
+    X_train,
+    y_train,
+    performance_metric="roc_auc",
+    resultsGrid=False,
+    return_grid=False
+):
+    model = LogisticRegression(
+        random_state=666,
+        max_iter=1000
+    )
 
-def cats_to_str(X, y=None):
-    X_cat = X.copy()
-    for col in X_cat: 
-        X_cat[col] = X_cat[col].apply(lambda x: val_to_str(x))
-    return X_cat
+    solvers = ["liblinear"]
+    penalty = ["l2", "l1"]
+    c_values = [10, 1.0, 0.1, 0.01, 0.001]
+
+    grid = {
+        "solver": solvers,
+        "penalty": penalty,
+        "C": c_values
+    }
+
+    cv = RepeatedStratifiedKFold(
+        n_splits=5,
+        n_repeats=1,
+        random_state=1
+    )
+
+    grid_search = GridSearchCV(
+        estimator=model,
+        param_grid=grid,
+        n_jobs=-1,
+        cv=cv,
+        scoring=performance_metric,
+        error_score="raise"
+    )
+
+    grid_result = grid_search.fit(X_train, y_train)
+
+    if resultsGrid:
+        return grid_result.cv_results_
+
+    if return_grid:
+        return grid_result
+
+    return grid_result.best_estimator_
 
 
-class categ_str(BaseEstimator, TransformerMixin):
-    def __init__(self):
-        pass
+class GridSearchLogisticRegression(BaseEstimator, ClassifierMixin):
+    def __init__(self, performance_metric="roc_auc"):
+        self.performance_metric = performance_metric
 
-    def fit(self, X, y=None):
+    def fit(self, X, y):
+        self.grid_ = grid_lr(
+            X,
+            y,
+            performance_metric=self.performance_metric,
+            return_grid=True
+        )
+        self.model_ = self.grid_.best_estimator_
+        self.classes_ = self.model_.classes_
         return self
 
-    def transform(self, X, y=None):
-        return cats_to_str(pd.DataFrame(X))
+    def hypers(self):
+        check_is_fitted(self, "grid_")
+        return self.grid_.best_params_
+
+    def predict(self, X):
+        check_is_fitted(self, "model_")
+        return self.model_.predict(X)
+
+    def predict_proba(self, X):
+        check_is_fitted(self, "model_")
+        return self.model_.predict_proba(X)
 
 
-############################ Preprocess...
-    
-# Algortihm Table One
+# ============================================================
+# Random Forest
+# ============================================================
 
-from scipy import stats
+def grid_RandomForest(
+    X_train,
+    y_train,
+    performance_metric="roc_auc",
+    resultsGrid=False,
+    return_grid=False
+):
+    model = RandomForestClassifier(random_state=0)
 
-def classify_vars(df):
-    categorial, nonormal, normal = [],[],[]
-    for t in df.columns:
-        if df[t].dtypes=="object" or df[t].dtypes.name=='category':
-            categorial.append(t)
-        if df[t].dtypes=="int64" or df[t].dtypes=="float64":
-            n,p = stats.shapiro(df[t])
-            if p<0.05:
-                nonormal.append(t)
-            else: 
-                normal.append(t)
-    return categorial, nonormal, normal
+    n_estimators = np.arange(2, 10, 1)
+    criterion = ["gini", "entropy", "log_loss"]
+    min_samples_split = [0.05, 0.1]
+    max_depth = [2, 3, 4]
 
+    grid = {
+        "n_estimators": n_estimators,
+        "criterion": criterion,
+        "min_samples_split": min_samples_split,
+        "max_depth": max_depth
+    }
 
+    cv = RepeatedStratifiedKFold(
+        n_splits=5,
+        n_repeats=1,
+        random_state=1
+    )
 
+    grid_search = GridSearchCV(
+        estimator=model,
+        param_grid=grid,
+        n_jobs=-1,
+        cv=cv,
+        scoring=performance_metric,
+        error_score="raise"
+    )
 
-def normal_noNormal(df, numeric):
-    df = df[numeric].copy()
-    nonormal, normal = [],[]
-    for t in df.columns:
-            n, p = stats.shapiro(df[t])
-            if p<0.05:
-                nonormal.append(t)
-            else: 
-                normal.append(t)
-    return normal, nonormal
+    grid_result = grid_search.fit(X_train, y_train)
 
+    if resultsGrid:
+        return grid_result.cv_results_
 
-#### Adding more functions...
+    if return_grid:
+        return grid_result
 
-
-# This could help us to identify where a numerical variable
-# is suspect of be categorical...
-def is_float(num):
-    num = str(num)
-    flag  = False
-    for index  in range(len(num)-1):
-        if num[index]==',' or num[index]=='.' and num[index+1]!='0':
-            flag = True
-    return flag
-
-def InferCategorical(df,var):
-    Flag = True
-    floats = df[var].apply(lambda x: is_float(x)).sum()
-    range  = df[var].max() - df[var].min()
-    if floats>10 and range>10:
-        Flag=False
-    return Flag
+    return grid_result.best_estimator_
 
 
-def is_binary(df_, nums):
-    variables = []
-    for var in nums:
-        flag = True
-        unique = df_[var].unique()
-        for value in unique:
-            if value not in [0, 1, np.nan, 0.0, 1.0]:
-                flag = False
-        if flag == True:
-            variables.append(var)
-    return variables
+class GridSearchRandomForest(BaseEstimator, ClassifierMixin):
+    def __init__(self, performance_metric="roc_auc"):
+        self.performance_metric = performance_metric
+
+    def fit(self, X, y):
+        self.grid_ = grid_RandomForest(
+            X,
+            y,
+            performance_metric=self.performance_metric,
+            return_grid=True
+        )
+        self.model_ = self.grid_.best_estimator_
+        self.classes_ = self.model_.classes_
+        return self
+
+    def hypers(self):
+        check_is_fitted(self, "grid_")
+        return self.grid_.best_params_
+
+    def predict(self, X):
+        check_is_fitted(self, "model_")
+        return self.model_.predict(X)
+
+    def predict_proba(self, X):
+        check_is_fitted(self, "model_")
+        return self.model_.predict_proba(X)
 
 
+# ============================================================
+# AdaBoost
+# ============================================================
+
+def grid_Adaboost(
+    X_train,
+    y_train,
+    performance_metric="roc_auc",
+    resultsGrid=False,
+    return_grid=False
+):
+    model = AdaBoostClassifier(random_state=1)
+
+    n_estimators = [2, 15, 35, 50, 70, 100]
+    learning_rate = np.linspace(0.01, 1, 10)
+
+    grid = {
+        "n_estimators": n_estimators,
+        "learning_rate": learning_rate
+    }
+
+    cv = RepeatedStratifiedKFold(
+        n_splits=5,
+        n_repeats=1,
+        random_state=1
+    )
+
+    grid_search = GridSearchCV(
+        estimator=model,
+        param_grid=grid,
+        n_jobs=-1,
+        cv=cv,
+        scoring=performance_metric,
+        error_score="raise"
+    )
+
+    grid_result = grid_search.fit(X_train, y_train)
+
+    if resultsGrid:
+        return grid_result.cv_results_
+
+    if return_grid:
+        return grid_result
+
+    return grid_result.best_estimator_
 
 
-import pandas as pd
+class GridSearchAdaBoost(BaseEstimator, ClassifierMixin):
+    def __init__(self, performance_metric="roc_auc"):
+        self.performance_metric = performance_metric
 
-def check_dates(date, date_format):
-    if pd.isna(date):
-        return False
+    def fit(self, X, y):
+        self.grid_ = grid_Adaboost(
+            X,
+            y,
+            performance_metric=self.performance_metric,
+            return_grid=True
+        )
+        self.model_ = self.grid_.best_estimator_
+        self.classes_ = self.model_.classes_
+        return self
 
-    try:
-        pd.to_datetime(date, format=date_format, errors="raise")
-        return True
-    except (ValueError, TypeError):
-        return False
+    def hypers(self):
+        check_is_fitted(self, "grid_")
+        return self.grid_.best_params_
+
+    def predict(self, X):
+        check_is_fitted(self, "model_")
+        return self.model_.predict(X)
+
+    def predict_proba(self, X):
+        check_is_fitted(self, "model_")
+        return self.model_.predict_proba(X)
 
 
-def tab_check_dates(df, dates, date_format="%d/%m/%Y"):
-    if isinstance(dates, str):
-        dates = [dates]
+# ============================================================
+# Specificity
+# ============================================================
 
-    result = {}
+def especificityF(y_true, y_pred):
+    tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
+    return tn / (tn + fp)
 
-    for col in dates:
-        valid = df[col].map(lambda x: check_dates(x, date_format=date_format))
-        result[col] = valid.mean()
 
-    return pd.DataFrame.from_dict(
-        result,
-        orient="index",
-        columns=["pct_correct_format"]
+especificity = make_scorer(
+    especificityF,
+    greater_is_better=True
+)
+
+
+# ============================================================
+# Plot tools for GridSearchCV results
+# ============================================================
+
+def meet(fix_parameters, array):
+    counter = 0
+
+    for param in fix_parameters:
+        if array[param] != fix_parameters[param]:
+            counter += 1
+
+    return not bool(counter)
+
+
+def meet_indexes(results_, fix_parameters):
+    indexes = []
+
+    for ith, array in enumerate(results_["params"]):
+        if meet(fix_parameters, array):
+            indexes.append(ith)
+
+    return indexes
+
+
+def Plot_parameter_score(results_, fix_parameters, x_axis):
+    indices = meet_indexes(results_, fix_parameters)
+
+    X = [
+        i[x_axis]
+        for i in np.array(results_["params"])[indices]
+    ]
+
+    y = results_["mean_test_score"][indices]
+
+    return X, y
+
+
+# ============================================================
+# Manual repeated stratified K-fold scores
+# ============================================================
+
+def mean_scores_kfold(classifier, X_, y_):
+    X = X_.reset_index(drop=True)
+    y = y_.reset_index(drop=True)
+
+    X = X.to_numpy()
+
+    rskf = RepeatedStratifiedKFold(
+        n_splits=10,
+        n_repeats=3,
+        random_state=1
+    )
+
+    accuracys = []
+    recalls = []
+    f1s = []
+
+    for itrain, itest in rskf.split(X, y):
+        classifier.fit(X[itrain], y[itrain])
+        preds = classifier.predict(X[itest])
+
+        accuracys.append(accuracy_score(y[itest], preds))
+        recalls.append(recall_score(y[itest], preds))
+        f1s.append(f1_score(y[itest], preds))
+
+    return (
+        np.array(accuracys).mean(),
+        np.array(recalls).mean(),
+        np.array(f1s).mean()
     )
