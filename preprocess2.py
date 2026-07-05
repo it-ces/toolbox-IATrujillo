@@ -140,19 +140,31 @@ def is_binary(df_, nums):
 
 
 
+import pandas as pd
+
+def check_dates(date, date_format):
+    if pd.isna(date):
+        return False
+
+    try:
+        pd.to_datetime(date, format=date_format, errors="raise")
+        return True
+    except (ValueError, TypeError):
+        return False
 
 
+def tab_check_dates(df, dates, date_format="%d/%m/%Y"):
+    if isinstance(dates, str):
+        dates = [dates]
 
+    result = {}
 
+    for col in dates:
+        valid = df[col].map(lambda x: check_dates(x, date_format=date_format))
+        result[col] = valid.mean()
 
-
-def check_dates(date, format):
-  try:
-     pd.to_datetime(date, format=format)
-     return True
-  except:
-    return False
-
-def tab_check_dates(df, dates , format ='%d/%m/%Y'):
-  # there is a bug with NA but still works!
-  return (df[dates].map(lambda x: check_dates(x, format=format)).sum()/df.shape[0]).to_frame('n. correct format')
+    return pd.DataFrame.from_dict(
+        result,
+        orient="index",
+        columns=["pct_correct_format"]
+    )
