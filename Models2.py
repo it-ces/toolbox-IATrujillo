@@ -272,7 +272,7 @@ def grid_RandomForest(
 ):
     model = RandomForestClassifier(random_state=0)
 
-    n_estimators =[1000, 18000]
+    n_estimators =[350, 800]
     criterion = ["gini", "entropy", "log_loss"]
     min_samples_split = [0.05, 0.1, 0.2, 0.03]
     max_depth = [2, 3, 4, 8, 12, None]
