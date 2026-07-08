@@ -5,26 +5,6 @@ import pandas as pd
 import numpy as np
 
 
-def reduce_categories(X, min_percent):
-    # if the relative share is lesser than min_percent put the label 'Another'
-    X_transformed = X.copy()
-    for var in X_transformed.columns:
-        cats = X_transformed[var].value_counts(normalize=True).to_dict()
-        to_replace = [key for key in cats if cats[key]<min_percent and key!='nan']  
-         # Convert categories that not appear at least minpercent to <Another>
-        X_transformed[var] = X_transformed[var].replace(to_replace=to_replace, value='Another')
-    return X_transformed
-      
-class reduceCategories(BaseEstimator, TransformerMixin):
-    def __init__(self, min_percent=0.005):
-        self.min_percent = min_percent
-
-    def fit(self, X, y=None):
-        return self
-
-    def transform(self, X, y=None):
-        X_transformed = X.copy()
-        return reduce_categories(pd.DataFrame(X_transformed), self.min_percent)
 
  
 
