@@ -192,12 +192,12 @@ def grid_lr(
 ):
     model = LogisticRegression(
         random_state=666,
-        max_iter=1000
+        max_iter=10000
     )
 
     solvers = ["liblinear"]
     penalty = ["l2", "l1"]
-    c_values = [10, 1.0, 0.1, 0.01, 0.001]
+    c_values = [100, 10, 1.0, 0.1, 0.01, 0.001, 0.0001]
 
     grid = {
         "solver": solvers,
@@ -272,10 +272,10 @@ def grid_RandomForest(
 ):
     model = RandomForestClassifier(random_state=0)
 
-    n_estimators = np.arange(2, 10, 1)
+    n_estimators =[1000, 18000]
     criterion = ["gini", "entropy", "log_loss"]
-    min_samples_split = [0.05, 0.1]
-    max_depth = [2, 3, 4]
+    min_samples_split = [0.05, 0.1, 0.2, 0.03]
+    max_depth = [2, 3, 4, 8, 12, None]
 
     grid = {
         "n_estimators": n_estimators,
