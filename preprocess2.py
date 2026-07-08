@@ -16,7 +16,7 @@ def reduce_categories(X, min_percent):
     return X_transformed
       
 class reduceCategories(BaseEstimator, TransformerMixin):
-    def __init__(self, min_percent=0.05):
+    def __init__(self, min_percent=0.005):
         self.min_percent = min_percent
 
     def fit(self, X, y=None):
@@ -182,3 +182,48 @@ def tab_check_dates(df, dates, date_format="%d/%m/%Y"):
         orient="index",
         columns=["pct_correct_format"]
     )
+
+
+
+
+
+class categ_str(BaseEstimator, TransformerMixin):
+    def __init__(self, min_percent=0.01):
+        self.min_percent = min_percent
+
+    def fit(self, X, y=None):
+        X_df = pd.DataFrame(X).copy()
+
+        # Convertir a string sin convertir NaN en "nan"
+        for col in X_df.columns:
+            mask = X_df[col].notna()
+            X_df.loc[mask, col] = X_df.loc[mask, col].astype(str)
+
+        self.frequent_categories_ = {}
+
+        for col in X_df.columns:
+            freqs = X_df[col].value_counts(normalize=True, dropna=True)
+
+            frequent = freqs[freqs >= self.min_percent].index.tolist()
+
+            self.frequent_categories_[col] = set(frequent)
+
+        return self
+
+    def transform(self, X, y=None):
+        X_df = pd.DataFrame(X).copy()
+
+        # Convertir a string sin convertir NaN en "nan"
+        for col in X_df.columns:
+            mask = X_df[col].notna()
+            X_df.loc[mask, col] = X_df.loc[mask, col].astype(str)
+
+        # Reemplazar categorías raras o nuevas por "Another"
+        for col in X_df.columns:
+            frequent = self.frequent_categories_[col]
+
+            mask_rare = X_df[col].notna() & ~X_df[col].isin(frequent)
+
+            X_df.loc[mask_rare, col] = "Another"
+
+        return X_df
