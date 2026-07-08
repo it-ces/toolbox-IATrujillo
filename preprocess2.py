@@ -6,11 +6,6 @@ import numpy as np
 
 
 
- 
-
-# To use reduce_categories in a pipeline!!
-
-
 
 
 # Drop columns with NaN's

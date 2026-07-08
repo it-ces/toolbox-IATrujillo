@@ -274,7 +274,7 @@ def grid_RandomForest(
 
     n_estimators =[1000]
     criterion = ["gini", "entropy"]
-    min_samples_split = [0.05, 0.1, 0.2, None]
+    min_samples_split = [0.05, 0.1, 0.2, 0.3]
     max_depth = [3, 4, 8, 12, 20, None]
 
     grid = {
