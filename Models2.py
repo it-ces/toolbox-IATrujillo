@@ -266,11 +266,11 @@ def grid_RandomForest(
     model = RandomForestClassifier(random_state=0)
 
     grid = dict(
-        n_estimators=[1000, 1500],
-        max_depth=[4, 6, 8, 10, 12, 15, None],
-        min_samples_leaf=[20, 50, 100, 200, 300],
-        min_samples_split=[50, 100, 200, 400, 600],
-        max_features=["sqrt", "log2", 0.2, 0.3, 0.5, 0.7],
+        n_estimators=[1000],
+        max_depth=[7, 12, None],
+        min_samples_leaf=[15, 20, 30, ],
+        min_samples_split=[10, 20],
+        max_features=["sqrt", "log2", 0.2, 0.3,
         bootstrap=[True],
         class_weight=[None, "balanced", "balanced_subsample"],
         criterion=["gini", "entropy"]
