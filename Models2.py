@@ -1,18 +1,20 @@
 # ============================================================
 # Models with GridSearchCV compatible with sklearn Pipeline
+# take in mind that this gridserach is temporal! not iid.
 # ============================================================
 
 import numpy as np
 
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.utils.validation import check_is_fitted
+from sklearn.model_selection import TimeSeriesSplit, GridSearchCV
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 
-from sklearn.model_selection import RepeatedStratifiedKFold, GridSearchCV
+from sklearn.model_selection import TimeSeriesSplit, GridSearchCV
 
 from sklearn.metrics import (
     make_scorer,
@@ -50,11 +52,8 @@ def grid_SVC(
         "gamma": gamma
     }
 
-    cv = RepeatedStratifiedKFold(
-        n_splits=5,
-        n_repeats=1,
-        random_state=1
-    )
+    cv = TimeSeriesSplit(
+    n_splits=5)
 
     grid_search = GridSearchCV(
         estimator=model,
@@ -125,11 +124,8 @@ def grid_KNN(
         "weights": weights
     }
 
-    cv = RepeatedStratifiedKFold(
-        n_splits=5,
-        n_repeats=1,
-        random_state=1
-    )
+    cv = TimeSeriesSplit(
+    n_splits=5)
 
     grid_search = GridSearchCV(
         estimator=model,
@@ -205,11 +201,8 @@ def grid_lr(
         "C": c_values
     }
 
-    cv = RepeatedStratifiedKFold(
-        n_splits=5,
-        n_repeats=1,
-        random_state=1
-    )
+    cv = TimeSeriesSplit(
+    n_splits=5)
 
     grid_search = GridSearchCV(
         estimator=model,
@@ -284,11 +277,8 @@ def grid_RandomForest(
         "max_depth": max_depth
     }
 
-    cv = RepeatedStratifiedKFold(
-        n_splits=5,
-        n_repeats=1,
-        random_state=1
-    )
+    cv = TimeSeriesSplit(
+    n_splits=5)
 
     grid_search = GridSearchCV(
         estimator=model,
@@ -359,11 +349,8 @@ def grid_Adaboost(
         "learning_rate": learning_rate
     }
 
-    cv = RepeatedStratifiedKFold(
-        n_splits=5,
-        n_repeats=1,
-        random_state=1
-    )
+    cv = TimeSeriesSplit(
+    n_splits=5)
 
     grid_search = GridSearchCV(
         estimator=model,
@@ -384,33 +371,6 @@ def grid_Adaboost(
 
     return grid_result.best_estimator_
 
-
-class GridSearchAdaBoost(BaseEstimator, ClassifierMixin):
-    def __init__(self, performance_metric="roc_auc"):
-        self.performance_metric = performance_metric
-
-    def fit(self, X, y):
-        self.grid_ = grid_Adaboost(
-            X,
-            y,
-            performance_metric=self.performance_metric,
-            return_grid=True
-        )
-        self.model_ = self.grid_.best_estimator_
-        self.classes_ = self.model_.classes_
-        return self
-
-    def hypers(self):
-        check_is_fitted(self, "grid_")
-        return self.grid_.best_params_
-
-    def predict(self, X):
-        check_is_fitted(self, "model_")
-        return self.model_.predict(X)
-
-    def predict_proba(self, X):
-        check_is_fitted(self, "model_")
-        return self.model_.predict_proba(X)
 
 
 # ============================================================
