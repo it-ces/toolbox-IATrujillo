@@ -265,17 +265,16 @@ def grid_RandomForest(
 ):
     model = RandomForestClassifier(random_state=0)
 
-    n_estimators =[1000]
-    criterion = ["gini", "entropy"]
-    min_samples_split = [0.05, 0.1, 0.2, 0.3]
-    max_depth = [3, 4, 8, 12, 20, None]
-
-    grid = {
-        "n_estimators": n_estimators,
-        "criterion": criterion,
-        "min_samples_split": min_samples_split,
-        "max_depth": max_depth
-    }
+    grid = dict(
+        n_estimators=[1000, 1500],
+        max_depth=[4, 6, 8, 10, 12, 15, None],
+        min_samples_leaf=[20, 50, 100, 200, 300],
+        min_samples_split=[50, 100, 200, 400, 600],
+        max_features=["sqrt", "log2", 0.2, 0.3, 0.5, 0.7],
+        bootstrap=[True],
+        class_weight=[None, "balanced", "balanced_subsample"],
+        criterion=["gini", "entropy"]
+    )
 
     cv = TimeSeriesSplit(
     n_splits=5)
