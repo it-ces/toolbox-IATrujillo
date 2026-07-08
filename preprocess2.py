@@ -200,3 +200,5 @@ class categ_str(BaseEstimator, TransformerMixin):
             X_df.loc[mask_rare, col] = "Another"
 
         return X_df
+    
+    
