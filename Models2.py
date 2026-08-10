@@ -266,7 +266,7 @@ def grid_RandomForest(
     model = RandomForestClassifier(random_state=0)
 
     grid = dict(
-        n_estimators=[750],
+        n_estimators=[1050],
         max_depth=[12, 24],
         min_samples_leaf=[7,15, 35],
         min_samples_split=[7, 15, 35],
