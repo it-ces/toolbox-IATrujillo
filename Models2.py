@@ -267,8 +267,8 @@ def grid_RandomForest(
 
     grid = dict(
         n_estimators=[1050],
-        max_depth=[12, 24],
-        min_samples_leaf=[7,15, 35],
+        max_depth=[12, 24, 32, None],
+        min_samples_leaf=[7, 15, 35],
         min_samples_split=[7, 15, 35],
         max_features=["sqrt", "log2"],
         bootstrap=[True],
